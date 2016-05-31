@@ -1,13 +1,15 @@
 #include <stdio.h>
 
-#define STEP 50	/* one step */
-#define SECT 100	/* section length */
+#define STEP 50	/* step length */
+#define SECT 100	/* section width */
+
 #define UP 0
 #define LEFT 1
 #define DIAG 2
 
 #define MAX(a, b) a > b? a : b
 
+void LCSequencing(FILE *fileA, FILE *fileB, char cA, char cB);
 int myfget(char *dst, int size, FILE *input);
 int lcs(char *srcA, char *srcB, int lenA, int lenB);
 int lcscopy(char *srcA, char *srcB, int lenA, int lenB, char *seq);
@@ -15,9 +17,6 @@ void lcsprint(char *srcA, char *srcB, int lenA, int lenB, char *seq);
 
 int main(int argc, char **argv){
 	FILE *inA, *inB; 
-	long posA, posB;
-	char headA[SECT], headB[SECT], tmpA[SECT], tmpB[SECT];
-	char secA = 0, secB = 0;
 
 	/* file opening & error checking */
 	if (argc != 3) {
@@ -37,64 +36,62 @@ int main(int argc, char **argv){
 		return -1;
 	}
 
-	/* putting the header away and remember current position */
-	fgets(headA, SECT, inA);
-	fgets(headB, SECT, inB);
-	posA = ftell(inA);
-	posB = ftell(inB);
-
-/*
-	//XXX
-	fseek(inA, -80, SEEK_END);
-	fseek(inB, -80, SEEK_END);
-
-	{
-		int lenA, lenB;
-		char sequence[SECT] = {'\0', };
-
-		lenA = myfget(tmpA, SECT, inA);
-		lenB = myfget(tmpB, SECT, inB);
-		
-		printf("srcA : %s\nsrcB : %s\n", tmpA, tmpB);
-		printf("lenth: %d\nLCS  : %s\n", lcscopy(tmpA, tmpB, lenA, lenB, sequence), sequence);
-
-		printf("lenA: %d / lenB: %d\n", lenA, lenB);
-		lcsprint(tmpA, tmpB, lenA, lenB, sequence);
-	}
-	*/
-
-	while(!feof(inA)){
-		int lenA, lenB, cursor=0, curlen=0, maxlen=0, maxoffset=0;
-		char sequence[SECT] = {'\0', };
-
-		lenA = myfget(tmpA, SECT, inA);
-
-		fseek(inB, posB, SEEK_SET);
-		while(!feof(inB)){
-			lenB = myfget(tmpB, SECT, inB);
-			curlen = lcs(tmpA, tmpB, lenA, lenB); 
-			if (maxlen < curlen) {
-				maxlen = curlen;
-				maxoffset = cursor * SECT;
-			}
-			cursor++;
-		}
-
-		printf("\n");
-
-		fseek(inB, posB+maxoffset, SEEK_SET);
-		lenB = myfget(tmpB, SECT, inB);
-		lcsprint(tmpA, tmpB, lenA, lenB, sequence);
-
-		//lcsprint2(tmpA, tmpB, lenA, lenB, sequence);
-	}
-	
+	LCSequencing(inA, inB, 'A', 'B');
+	LCSequencing(inB, inA, 'B', 'A');
 
 	/* file closing */
 	fclose(inA);
 	fclose(inB);
 
 	return 0;
+}
+
+void LCSequencing(FILE *fileA, FILE *fileB, char cA, char cB){
+	long topA, topB;
+	char headA[SECT], headB[SECT], tmpA[SECT], tmpB[SECT];
+	int curA = 0, curB = 0; 
+
+	/* putting the header away and remember current position */
+	fseek(fileA, 0, SEEK_SET);
+	fseek(fileB, 0, SEEK_SET);
+	fgets(headA, SECT, fileA);
+	fgets(headB, SECT, fileB);
+	topA = ftell(fileA);
+	topB = ftell(fileB);
+
+	while(!feof(fileA)){
+		int lenA, lenB, curlen=0, maxlen=0, maxB=0;
+		char sequence[SECT] = {'\0', };
+
+		fseek(fileA, topA + (curA*STEP), SEEK_SET);
+		lenA = myfget(tmpA, SECT, fileA);
+		if(lenA <= STEP) break;
+
+		curB=0;
+		fseek(fileB, topB, SEEK_SET);
+
+		while(!feof(fileB)){
+			fseek(fileB, topB + (curB*STEP), SEEK_SET);
+			lenB = myfget(tmpB, SECT, fileB);
+			if(lenB <= STEP) break;
+
+			curlen = lcs(tmpA, tmpB, lenA, lenB); 
+			if (maxlen < curlen) {
+				maxlen = curlen;
+				maxB = curB;
+			}
+			curB++;
+		}
+
+		printf("%c%d,%c%d\n", cA, curA*STEP, cB, maxB*STEP);
+		
+		fseek(fileB, topB + (maxB*STEP), SEEK_SET);
+		lenB = myfget(tmpB, SECT, fileB);
+
+		lcscopy(tmpA, tmpB, lenA, lenB, sequence);
+
+		curA++;
+	}
 }
 
 /* ignoring '\n' and '\r', put 'size' characters into 'dst' from 'input.
@@ -210,7 +207,7 @@ int lcscopy(char *srcA, char *srcB, int lenA, int lenB, char *seq){
 	while(i-->0) resA[i]='_';
 	while(j-->0) resB[j]='_';
 
-	printf("seqA : %s\nseqB : %s\n", resA, resB);
+	printf("%s\n%s\n", resA, resB);
 
 	seq[length[lenA][lenB]] = '\0';
 
