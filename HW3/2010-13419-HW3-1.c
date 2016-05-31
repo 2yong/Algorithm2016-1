@@ -12,8 +12,7 @@
 void LCSequencing(FILE *fileA, FILE *fileB, char cA, char cB);
 int myfget(char *dst, int size, FILE *input);
 int lcs(char *srcA, char *srcB, int lenA, int lenB);
-int lcscopy(char *srcA, char *srcB, int lenA, int lenB, char *seq);
-void lcsprint(char *srcA, char *srcB, int lenA, int lenB, char *seq);
+int lcsprint(char *srcA, char *srcB, int lenA, int lenB);
 
 int main(int argc, char **argv){
 	FILE *inA, *inB; 
@@ -36,6 +35,7 @@ int main(int argc, char **argv){
 		return -1;
 	}
 
+	/* main procedure. LCS sequencing and printing */
 	LCSequencing(inA, inB, 'A', 'B');
 	LCSequencing(inB, inA, 'B', 'A');
 
@@ -88,7 +88,7 @@ void LCSequencing(FILE *fileA, FILE *fileB, char cA, char cB){
 		fseek(fileB, topB + (maxB*STEP), SEEK_SET);
 		lenB = myfget(tmpB, SECT, fileB);
 
-		lcscopy(tmpA, tmpB, lenA, lenB, sequence);
+		lcsprint(tmpA, tmpB, lenA, lenB);
 
 		curA++;
 	}
@@ -122,7 +122,6 @@ int mystrncpy(char *dst, char *src, int n){
 	return len;
 }
 
-/* */
 int lcs(char *srcA, char *srcB, int lenA, int lenB){
 	char length[SECT+1][SECT+1];
 	int i, j;
@@ -148,7 +147,7 @@ int lcs(char *srcA, char *srcB, int lenA, int lenB){
 	return length[lenA][lenB];
 }
 
-int lcscopy(char *srcA, char *srcB, int lenA, int lenB, char *seq){
+int lcsprint(char *srcA, char *srcB, int lenA, int lenB){
 	char length[SECT+1][SECT+1], making[SECT+1][SECT+1];
 	int i, j;
 	char resA[SECT], resB[SECT];
@@ -185,7 +184,6 @@ int lcscopy(char *srcA, char *srcB, int lenA, int lenB, char *seq){
 	while(length[i][j]>0) {
 		switch (making[i][j]) {
 		case DIAG:
-			seq[length[i][j]-1] = srcA[i];
 			resA[i-1] = srcA[i];
 			resB[j-1] = srcB[j];
 			i--;
@@ -209,38 +207,5 @@ int lcscopy(char *srcA, char *srcB, int lenA, int lenB, char *seq){
 
 	printf("%s\n%s\n", resA, resB);
 
-	seq[length[lenA][lenB]] = '\0';
-
 	return length[lenA][lenB];
 }
-
-/* XXX: it's for printing from left 
-void lcsprint(char *srcA, char *srcB, int lenA, int lenB, char *seq){
-	int i, k;
-	char resA[SECT], resB[SECT];
-
-	for(i=0, k=0; i<lenA; i++){
-		if(srcA[i] == seq[k]){
-			resA[i] = srcA[i];
-			k++;
-		}
-		else 
-			resA[i] = '_';
-	}	
-
-	resA[i] = '\0';
-
-	for(i=0, k=0; i<lenB; i++){
-		if(srcB[i] == seq[k]){
-			resB[i] = srcB[i];
-			k++;
-		}
-		else 
-			resB[i] = '_';
-	}	
-
-	resB[i] = '\0';
-
-	printf("seqA : %s\nseqB : %s\n", resA, resB);
-}
-*/
