@@ -1,0 +1,6 @@
+OS: linux. Ubuntu 14.04
+MACHINE: PC
+Program language and version: C, EGLIBC 2.19
+External library: No
+$ gcc -i 2010-13419-HW3-1 2010-13419-HW3-1.c
+$ ./2010-13419-HW3-1 geneA.fa geneB.fa
